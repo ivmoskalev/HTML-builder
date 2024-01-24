@@ -85,21 +85,18 @@ async function copyDir(src, dest) {
     await fsPromises.rm(dest, { recursive: true, force: true });
     await fsPromises.mkdir(dest, { recursive: true });
 
-    const entries = await fsPromises.readdir(
-      src,
-      { withFileTypes: true },
-      (err, entries) => {
-        if (err) {
-          console.error('An error occurred while copying the directory:', err);
-        }
-        return entries;
-      },
-    );
-    entries.forEach((entry) => {
+    const entries = await fsPromises.readdir(src, { withFileTypes: true });
+
+    for (const entry of entries) {
       const srcPath = path.join(src, entry.name);
       const destPath = path.join(dest, entry.name);
-      fsPromises.copyFile(srcPath, destPath);
-    });
+
+      if (entry.isDirectory()) {
+        await copyDir(srcPath, destPath);
+      } else {
+        await fsPromises.copyFile(srcPath, destPath);
+      }
+    }
   } catch (err) {
     console.error('An error occurred while copying the directory:', err);
   }
